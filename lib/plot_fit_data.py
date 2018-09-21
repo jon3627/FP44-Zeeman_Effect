@@ -45,22 +45,22 @@ def plot_B_field_dfs(df, fit_data=None):
         middle = 10
         upper = 12
     axis.errorbar(df.loc[lower:middle, 'Current I [A]'],
-                  df.loc[lower:middle, 'magnetic field mean [G]'],
+                  df.loc[lower:middle, 'magnetic field mean [T]'],
                   xerr=df.loc[lower:middle, 'Current error [A]'],
-                  yerr=df.loc[lower:middle, 'error magnetic field mean [G] (gauss)'],
+                  yerr=df.loc[lower:middle, 'error magnetic field mean [T] (gauss)'],
                   fmt='.', color=c.COLORS['1'], label='increasing',
                   elinewidth=c.ERRORBAR_LINEWIDTH,
                   capsize=c.ERRORBAR_CAPSIZE)
     axis.errorbar(df.loc[upper:, 'Current I [A]'],
-                  df.loc[upper:, 'magnetic field mean [G]'],
+                  df.loc[upper:, 'magnetic field mean [T]'],
                   xerr=df.loc[upper:, 'Current error [A]'],
-                  yerr=df.loc[upper:, 'error magnetic field mean [G] (gauss)'],
+                  yerr=df.loc[upper:, 'error magnetic field mean [T] (gauss)'],
                   fmt='.', color=c.COLORS['3'], label='decreasing',
                   elinewidth=c.ERRORBAR_LINEWIDTH,
                   capsize=c.ERRORBAR_CAPSIZE)
 
     axis.set_xlabel('current I [A]')
-    axis.set_ylabel('magnetic field B [G]')
+    axis.set_ylabel('magnetic field B [T]')
     axis.legend()
 
 
@@ -75,9 +75,9 @@ def fit_b_field_df(df):
 
     df_clean = df.drop(df.index[[0, 10, 11]])
     x = df_clean.loc[:, 'Current I [A]'].values
-    y = df_clean.loc[:, 'magnetic field mean [G]'].values
+    y = df_clean.loc[:, 'magnetic field mean [T]'].values
     xerr = df_clean.loc[:, 'Current error [A]'].values
-    yerr = df_clean.loc[:, 'error magnetic field mean [G] (gauss)'].values
+    yerr = df_clean.loc[:, 'error magnetic field mean [T] (gauss)'].values
 
     p = Parameters()
     p.add('slope', value=1.)
@@ -155,9 +155,9 @@ def _save_fit_params(fit, fit_data):
 
 def _get_init_params(fct, init_params, model, i):
     params = model.make_params()
-    if params.keys() == init_params.keys():
+    if params.keys() == init_params[i].keys():
         for param in params.keys():
-            params[param].set(init_params[param])
+            params[param].set(init_params[i][param])
     else:
         raise UserWarning('provided and expected parameters do not match')
     return params

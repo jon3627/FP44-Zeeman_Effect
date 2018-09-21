@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import lib.constants as c
+import scipy.constants as const
 import numpy as np
 from scipy.optimize import curve_fit
+from lib.util import linear
 
 
 def find_Cd_line(fit_df_spec, ref):
@@ -32,3 +34,50 @@ def find_Cd_line(fit_df_spec, ref):
     cd_line = (fit_df_spec.loc[0, 'gauss3_cen'] - b) / a
     cd_line_err = fit_df_spec.loc[0, 'gauss3_sig'] / a
     print('Cd-line in nm: {}, error in nm: {}'.format(cd_line, cd_line_err))
+    return cd_line, cd_line_err
+
+
+def calculate_Bohr_magneton(fit_df, cd_line, cd_line_err, B_field_fit_data):
+    df, filename = fit_df
+    current = int(filename[4:-1])
+    B_field = linear(B_field_fit_data, current)
+    orders = df.index.values[::-1]
+    pi_lines = df['gauss2_cen'].values
+    pi_lines_err = df['gauss2_sig'].values
+
+    # fit and plot
+    def fitfunction(x, a, b, c):
+        return a*x**2 + b*x + c
+
+    popt, pcov = curve_fit(fitfunction, pi_lines, orders)
+
+    plt.errorbar(pi_lines, orders, fmt='.', xerr=pi_lines_err)
+    plt.plot(pi_lines, fitfunction(pi_lines, *popt))
+
+    daDa = (fitfunction(df['gauss1_cen'].values,*popt)-fitfunction(df['gauss3_cen'].values,*popt))/2
+    daDa_err = np.std(daDa)/np.sqrt(len(daDa))
+    daDa = np.mean(daDa)
+    dlambda = daDa*(cd_line*1e-9)**2/(2*c.THICKNESS*np.sqrt(c.N_LUMMERGEHRCKE**2-1))
+    dlambda_err = dlambda*np.sqrt((daDa_err/daDa)**2+(2*cd_line_err/cd_line)**2)
+
+    dEnergy = const.h*const.c/(cd_line*1e-9)-const.h*const.c/(cd_line*1e-9+dlambda)
+    dEnergy_err = np.sqrt(((const.h*const.c/(cd_line**2*1e-9)-const.h*const.c*1e-9/(cd_line*1e-9+dlambda)**2)*cd_line_err)**2+
+                          (const.h*const.c/(cd_line*1e-9+dlambda)**2*dlambda_err)**2)
+    Bohr_magneton = dEnergy/B_field[0]
+    Bohr_magneton_err = Bohr_magneton*np.sqrt((dEnergy_err/dEnergy)**2+(B_field[1]/B_field[0])**2)
+    print('Bohr magneton in J/T for I='+str(current)+'A: '+str(Bohr_magneton)+', error in J/T: '+str(Bohr_magneton_err))
+    return Bohr_magneton, Bohr_magneton_err, dEnergy, dEnergy_err, B_field[0], B_field[1]
+
+
+def calculate_Bohr_magneton_meth2(arr, arr_err, B_field, B_field_err):
+    # fit and plot
+    def fitfunction(x, a):
+        return a*x
+
+    popt, pcov = curve_fit(fitfunction, B_field, arr, sigma=arr_err)
+
+    plt.errorbar(B_field, arr, fmt='.', yerr=arr_err, xerr=B_field_err)
+    plt.plot(B_field, fitfunction(B_field, *popt))
+    return popt[0], np.sqrt(np.diag(pcov))[0]
+
+
