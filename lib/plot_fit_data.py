@@ -9,7 +9,7 @@ from lmfit.models import Model, LinearModel, LorentzianModel, GaussianModel
 from scipy.optimize import curve_fit
 
 
-def plot_dfs(dfs, max_column_number, zeeman=None):
+def plot_dfs(dfs, max_column_number, zeeman=None, zeeman_split=None):
     plot_columns = ceil(len(dfs) / max_column_number)
     fig, axis = plt.subplots(plot_columns, max_column_number,
                              figsize=(15, plot_columns * 5), facecolor='w', edgecolor='k')
@@ -20,12 +20,24 @@ def plot_dfs(dfs, max_column_number, zeeman=None):
     for i, df in enumerate(dfs):
         if zeeman is not None:
             df, filename = df
-            axis[i].set_title(filename)
-        axis[i].plot(df.index, df.iloc[:, 0].values, '.', markersize=c.PLOT_MARKERSIZE)
+            current = int(filename[4:-1])
+            if filename[:4] == 'tran':
+                axis[i].set_title('transverse direction, current = '+str(current)+' A')
+            else:
+                axis[i].set_title('longitudinal direction, current = '+str(current)+' A')
+        if zeeman_split is not None:
+            current = int(zeeman_split[4:-1])
+            order = np.arange(len(dfs))[::-1]
+            axis[i].set_title('current = ' + str(current) + ' A, order k = '+str(order[i]))
+        axis[i].plot(df.index, df.iloc[:, 0].values, '.', label='data points',markersize=c.PLOT_MARKERSIZE)
         if df.get('Best fit') is not None:
-            axis[i].plot(df.index, df['Best fit'].values, 'r-', markersize=c.PLOT_MARKERSIZE)
+            axis[i].plot(df.index, df['Best fit'].values, 'r-', label='fit', markersize=c.PLOT_MARKERSIZE)
     for i in range(len(dfs), max_column_number * plot_columns):
         axis[i].set_visible(False)
+    for i in range(0, plot_columns):
+        axis[i*max_column_number].set_ylabel('intensity [a.u.]')
+    for i in range(max_column_number*plot_columns-max_column_number, max_column_number*plot_columns):
+        axis[i].set_xlabel('position [px]')
     plt.tight_layout()
 
 

@@ -158,7 +158,7 @@ def main():
     fit_dfs_arr = []
     for j in range(0, len(dfs_split)):
         new_dfs, fit_df = fit_dfs(dfs_split[j][0], gaussiannumber=3, init_params=params_trans[j])
-        plot_dfs(new_dfs, 3)
+        plot_dfs(new_dfs, 3, zeeman_split=dfs_split[j][1])
         plt.show()
         fit_dfs_arr.append((fit_df, dfs_split[j][1]))
 
